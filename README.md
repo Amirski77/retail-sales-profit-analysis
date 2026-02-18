@@ -1,7 +1,7 @@
 # 🛒 Retail Sales Analysis & Profit Forecasting
 
 > **End-to-end analytics pipeline (SQL → Power BI → Python ML) on 2,120 U.S. retail transactions spanning 2014–2017.
-> Core discovery: the Discount coefficient (−359.20) is ~7,200× stronger than the Sales coefficient (+0.05) — proving that aggressive discounting is the single largest driver of profit destruction in this business.**
+> Core discovery: the Discount coefficient (−346.23) is ~8,600× stronger than the Sales coefficient (+0.04) — proving that aggressive discounting is the single largest driver of profit destruction in this business.**
 
 ---
 
@@ -43,7 +43,7 @@ The analysis follows the full data lifecycle — from raw data ingestion and SQL
 | **Power BI** | Interactive dashboards — drill-through reports, dynamic filters, KPI cards |
 | **Python** | EDA, data preprocessing, Linear Regression modeling |
 | **pandas · matplotlib · seaborn** | Data manipulation & statistical visualization |
-| **scikit-learn** | Machine learning — `LinearRegression` model training & prediction |
+| **scikit-learn** | Machine learning — `LinearRegression`, `train_test_split`, evaluation metrics |
 
 ---
 
@@ -51,15 +51,15 @@ The analysis follows the full data lifecycle — from raw data ingestion and SQL
 
 ```
 ┌───────────────────────┐     ┌───────────────────────┐     ┌───────────────────────┐     ┌───────────────────────┐
-│       RAW DATA        │────▶│    GOOGLE BIGQUERY   │────▶│   PYTHON (Jupyter)    │────▶│       POWER BI        │
+│       RAW DATA        │────▶│    GOOGLE BIGQUERY    │────▶│   PYTHON (Jupyter)    │────▶│       POWER BI        │
 │        4 CSVs         │     │                       │     │                       │     │       DASHBOARD       │
 │                       │     │  • Import & audit     │     │  • EDA plots          │     │                       │
 │  customers            │     │  • Deduplicate        │     │  • Distribution       │     │  • 7+ business        │
 │  products             │     │    (QUALIFY +         │     │    analysis           │     │    questions          │
-│  orders               │     │     ROW_NUMBER)       │     │  • Linear             │     │  • Drill-through      │
-│  sales                │     │  • JOIN into 1        │     │    Regression         │     │  • Actual vs.         │
-│                       │     │    unified table      │     │  • Export             │     │    Predicted          │
-│                       │     │  • Export CSV         │     │    forecast.csv       │     │    profit overlay     │
+│  orders               │     │     ROW_NUMBER)       │     │  • Train/Test split   │     │  • Drill-through      │
+│  sales                │     │  • JOIN into 1        │     │  • Linear Regression  │     │  • Actual vs.         │
+│                       │     │    unified table      │     │  • R², MAE, RMSE      │     │    Predicted          │
+│                       │     │  • Export CSV         │     │  • forecast.csv       │     │    profit overlay     │
 └───────────────────────┘     └───────────────────────┘     └───────────────────────┘     └───────────────────────┘
 ```
 
@@ -232,36 +232,53 @@ Built a **multi-page interactive report** answering **7+ business questions**:
 Target variable :  Profit
 Features        :  Sales, Discount, Quantity
 Algorithm       :  sklearn.linear_model.LinearRegression
-Training data   :  2,120 transactions (full dataset)
+Split           :  80% train (1,696 rows) / 20% test (424 rows)
+random_state    :  42
 ```
 
 #### 📋 Model Coefficients
 
-*All values verified from notebook output (Cell 10):*
+*All values from the train/test split model (notebook Cell 12):*
 
 | Symbol | Feature | Coefficient | What It Means in Business Terms |
 |:------:|:--------|:-----------:|:--------------------------------|
-| β₀ | *Intercept* | **+59.79** | Baseline expected profit of ~$60 before any feature effects |
-| β₁ | `Sales` | **+0.05** | Every additional $1 in sale amount adds $0.05 to profit |
-| β₂ | `Discount` | **−359.20** | A 10% discount increase (0.1) cuts profit by **$35.92** per order |
-| β₃ | `Quantity` | **−1.21** | Each additional unit sold reduces profit by $1.21 (margin dilution) |
+| β₀ | *Intercept* | **+60.22** | Baseline expected profit of ~$60 before any feature effects |
+| β₁ | `Sales` | **+0.04** | Every additional $1 in sale amount adds $0.04 to profit |
+| β₂ | `Discount` | **−346.23** | A 10% discount increase (0.1) cuts profit by **$34.62** per order |
+| β₃ | `Quantity` | **−0.77** | Each additional unit sold reduces profit by $0.77 (margin dilution) |
 
 > 🚨 **Key Finding:**
 >
-> The Discount coefficient (−359.20) is **~7,200× larger in magnitude** than the Sales coefficient (+0.05).
+> The Discount coefficient (−346.23) is **~8,600× larger in magnitude** than the Sales coefficient (+0.04).
 >
-> In practical terms: a 20% discount wipes out **$71.84** per transaction — exceeding the $59.79 baseline entirely. This means **any order with a 20%+ discount starts in the red before other factors even apply.**
+> In practical terms: a 20% discount wipes out **$69.25** per transaction — exceeding the $60.22 baseline entirely. This means **any order with a 20%+ discount starts in the red before other factors even apply.**
+
+#### 📊 Model Evaluation (Test Set — 424 Unseen Transactions)
+
+| Metric | Value | Interpretation |
+|:-------|:-----:|:---------------|
+| **R² Score** | **0.3513** | The model explains ~35% of profit variance using only 3 features |
+| **MAE** | **$59.34** | On average, predictions are off by ~$59 |
+| **RMSE** | **$106.07** | Larger errors are penalized more heavily; outlier impact is significant |
+
+> **What does R² = 0.35 mean?** The model captures the dominant directional trends (discounts → loss, higher sales → gain) but 65% of profit variance comes from factors not in the model — such as product cost structure, customer negotiation, regional pricing, and seasonality. This is expected with only 3 features, and the coefficient insights remain highly valuable for business decision-making even though the predictive accuracy is moderate.
 
 #### 🔄 Forecast Pipeline
 
 ```
-Training data (2,120 rows)
+Full dataset (2,120 rows)
+        │
+        ├── 80% train (1,696 rows)
+        │         │
+        │         ▼
+        │   LinearRegression.fit(X_train, y_train)
+        │         │
+        │         ▼
+        │   Evaluate on 20% test (424 rows)
+        │   R² = 0.35 | MAE = $59 | RMSE = $106
         │
         ▼
-LinearRegression.fit(X, y)
-        │
-        ▼
-model.predict(X) → new column: Predicted_Profit
+model.predict(full dataset) → Predicted_Profit column
         │
         ▼
 Export to forecast.csv
@@ -280,7 +297,7 @@ Import into Power BI → Actual vs. Predicted profit overlay
 
 | # | Insight | Supporting Evidence | Recommended Action |
 |:-:|:--------|:-------------------|:-------------------|
-| 1 | **Discounts above 20% nearly always produce negative profit** | Model coefficient β₂ = −359.20; at 20% discount, the loss (−$71.84) exceeds the baseline profit (+$59.79) | Cap discounts at 15–20%; require margin approval for anything above |
+| 1 | **Discounts above 20% nearly always produce negative profit** | β₂ = −346.23; at 20% discount, the loss (−$69.25) exceeds the baseline profit (+$60.22) | Cap discounts at 15–20%; require margin approval for anything above |
 | 2 | **Tables & Bookcases are consistently sold at a loss** | Sub-category profit analysis shows persistent negative profit totals | Renegotiate supplier terms or phase out lowest-margin SKUs |
 
 ### 📊 Strategic — Planning & Optimization
@@ -294,23 +311,23 @@ Import into Power BI → Actual vs. Predicted profit overlay
 
 ---
 
-## Limitations & Future Work
+## ⚠️ Limitations & Future Work
 
 ### Honest Assessment of Current Scope
 
-| Limitation | Why It Matters | How I Would Fix It |
-|:-----------|:---------------|:-------------------|
-| **No train/test split** | The model was trained and evaluated on the same 2,120 rows, so accuracy on unseen data is unknown | Apply `train_test_split` (80/20) and report R², MAE, RMSE on the held-out test set |
-| **No evaluation metrics** | Coefficients alone don't tell you how well the model *fits* — R² and residual analysis are standard practice | Add `r2_score`, `mean_absolute_error`, `mean_squared_error` from sklearn.metrics |
-| **Linear model only** | Assumes a perfectly linear discount→profit relationship; real dynamics may have non-linear thresholds | Test **Random Forest** or **XGBoost** to capture interaction effects |
-| **No external features** | The model doesn't account for seasonality, customer lifetime value, or product cost structure | Engineer time-based and customer-based features for richer predictions |
+| Limitation | Why It Matters | How I Would Address It |
+|:-----------|:---------------|:-----------------------|
+| **R² = 0.35 (moderate fit)** | The model captures the right directional trends but misses 65% of profit variance | Engineer additional features: product cost, customer lifetime value, time-based variables |
+| **Linear model only** | Assumes a perfectly linear discount→profit relationship; real dynamics may have non-linear thresholds | Benchmark against **Random Forest** and **XGBoost** to capture interaction effects |
+| **No time-series features** | Seasonality (Q4 spikes) is visible in EDA but not encoded in the regression model | Add month, quarter, and year-over-year growth as features |
+| **Single dataset scope** | Results are specific to this U.S. retail dataset; generalizability is untested | Validate on a different time period or retail dataset |
 
 ### Planned Next Steps
 
-- 🔄 Re-train with proper **train/test split** and publish evaluation metrics
-- 🌲 Benchmark against **tree-based models** (Random Forest, XGBoost)
-- 📅 Add **time-series features** (month, quarter, year-over-year growth)
+- 🌲 Benchmark against **tree-based models** (Random Forest, XGBoost) to improve R²
+- 📅 Add **time-series features** (month, quarter, YoY growth) to capture seasonality
 - 👥 Build a **customer segmentation model** (RFM analysis) to identify high-value vs. at-risk customers
+- 🔁 Implement **cross-validation** (5-fold) for more robust performance estimates
 - ☁️ Deploy the Power BI dashboard to **Power BI Service** for live stakeholder access
 
 ---
@@ -322,7 +339,7 @@ Import the four source CSV files into **Google BigQuery** and execute the querie
 
 ### 2️⃣ Python
 ```bash
-pip install pandas matplotlib seaborn scikit-learn
+pip install pandas matplotlib seaborn scikit-learn numpy
 ```
 Open `final_forecast_csv.ipynb` in **Jupyter Notebook** or **Google Colab**.
 Make sure `final_project_query.csv` is in your working directory.
@@ -332,9 +349,7 @@ Open `Final_Project.pbix` in **Power BI Desktop** (free download from Microsoft)
 Reconnect data sources if prompted.
 
 ---
-
 ## 👤 Author
-
 **Amir Rashidov**
 
 🎓 Data Analytics Student
