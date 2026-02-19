@@ -1,17 +1,17 @@
-# 🛒 Retail Sales Analysis & Profit Forecasting
+#  Retail Sales Analysis & Profit Forecasting
 
 > **End-to-end analytics pipeline (SQL → Power BI → Python ML) on 2,120 U.S. retail transactions spanning 2014–2017.
 > Core discovery: the Discount coefficient (−346.23) is ~8,600× stronger than the Sales coefficient (+0.04) — proving that aggressive discounting is the single largest driver of profit destruction in this business.**
 
 ---
 
-## 📌 Project Overview
+##  Project Overview
 
 This project tackles a real business problem: **What factors most influence a retail company's profitability — and can we predict profit per transaction before the sale happens?**
 
 The analysis follows the full data lifecycle — from raw data ingestion and SQL-based cleaning, through interactive Power BI dashboards, to a Linear Regression model in Python — mirroring the workflow of a professional analytics team.
 
-### 🎯 Objectives
+###  Objectives
 
 - Identify top-performing products, regions, and customer segments
 - Quantify the **true cost of discounting** on profit margins
@@ -21,7 +21,7 @@ The analysis follows the full data lifecycle — from raw data ingestion and SQL
 
 ---
 
-## 📐 Data at a Glance
+##  Data at a Glance
 
 | Metric | Value |
 |:-------|:------|
@@ -34,7 +34,7 @@ The analysis follows the full data lifecycle — from raw data ingestion and SQL
 
 ---
 
-## 🛠️ Tech Stack
+##  Tech Stack
 
 | Tool | Purpose |
 |:-----|:--------|
@@ -47,7 +47,7 @@ The analysis follows the full data lifecycle — from raw data ingestion and SQL
 
 ---
 
-## 🔄 Pipeline Architecture
+##  Pipeline Architecture
 
 ```
 ┌───────────────────────┐     ┌───────────────────────┐     ┌───────────────────────┐     ┌───────────────────────┐
@@ -91,7 +91,7 @@ The analysis follows the full data lifecycle — from raw data ingestion and SQL
 
 ---
 
-## 🗄️ Data Model
+##  Data Model
 
 The source data is organized as **4 normalized tables**:
 
@@ -106,7 +106,7 @@ The source data is organized as **4 normalized tables**:
 
 ---
 
-## 📊 Part 1 — SQL Analysis (Google BigQuery)
+## Part 1 — SQL Analysis (Google BigQuery)
 
 ### 🔧 Data Preparation
 
@@ -114,7 +114,7 @@ The source data is organized as **4 normalized tables**:
 - Validated data types and checked for duplicates across every table
 - Built a clean, unified table using `QUALIFY ROW_NUMBER() OVER(PARTITION BY ...)` window functions combined with multi-table `LEFT JOIN`
 
-### 🔍 Analytical Queries
+### Analytical Queries
 
 | # | Query | SQL Technique | Business Purpose |
 |:-:|:------|:-------------|:-----------------|
@@ -126,7 +126,7 @@ The source data is organized as **4 normalized tables**:
 | 6 | **Unified Master Table** | 4-table `JOIN` via `CTEs` with dedup | Create single source of truth for Python & Power BI |
 
 <details>
-<summary>💻 <b>Click to view SQL — Unified Table Creation</b></summary>
+<summary> <b>Click to view SQL — Unified Table Creation</b></summary>
 
 <br>
 
@@ -186,7 +186,7 @@ LEFT JOIN Clean_Products p  ON s.`Product ID` = p.`Product_ID`;
 
 ---
 
-## 📈 Part 2 — Power BI Dashboard
+##  Part 2 — Power BI Dashboard
 
 Built a **multi-page interactive report** answering **7+ business questions**:
 
@@ -204,16 +204,16 @@ Built a **multi-page interactive report** answering **7+ business questions**:
 
 | Feature | Description |
 |:--------|:------------|
-| 🔽 **Dynamic Filters** | Filter by Year, Month, Segment, and Region |
-| 🔎 **Drill-Through** | Click any region → opens a detailed breakdown page |
-| 🏷️ **Discount Toggle** | Isolate only discounted transactions |
-| 📦 **Category Tracker** | Select a product category → track its sales & profit over time |
-| 🤖 **Forecast Overlay** | Actual vs. Predicted profit side-by-side (data from Python model) |
-| 🧭 **Page Navigation** | Button-based navigation across report sections |
+|  **Dynamic Filters** | Filter by Year, Month, Segment, and Region |
+|  **Drill-Through** | Click any region → opens a detailed breakdown page |
+|  **Discount Toggle** | Isolate only discounted transactions |
+|  **Category Tracker** | Select a product category → track its sales & profit over time |
+|  **Forecast Overlay** | Actual vs. Predicted profit side-by-side (data from Python model) |
+|  **Page Navigation** | Button-based navigation across report sections |
 
 ---
 
-## 🐍 Part 3 — Python: EDA & Predictive Modeling
+##  Part 3 — Python: EDA & Predictive Modeling
 
 ### Exploratory Data Analysis (EDA)
 
@@ -236,7 +236,7 @@ Split           :  80% train (1,696 rows) / 20% test (424 rows)
 random_state    :  42
 ```
 
-#### 📋 Model Coefficients
+####  Model Coefficients
 
 *All values from the train/test split model (notebook Cell 12):*
 
@@ -247,13 +247,13 @@ random_state    :  42
 | β₂ | `Discount` | **−346.23** | A 10% discount increase (0.1) cuts profit by **$34.62** per order |
 | β₃ | `Quantity` | **−0.77** | Each additional unit sold reduces profit by $0.77 (margin dilution) |
 
-> 🚨 **Key Finding:**
+>  **Key Finding:**
 >
 > The Discount coefficient (−346.23) is **~8,600× larger in magnitude** than the Sales coefficient (+0.04).
 >
 > In practical terms: a 20% discount wipes out **$69.25** per transaction — exceeding the $60.22 baseline entirely. This means **any order with a 20%+ discount starts in the red before other factors even apply.**
 
-#### 📊 Model Evaluation (Test Set — 424 Unseen Transactions)
+####  Model Evaluation (Test Set — 424 Unseen Transactions)
 
 | Metric | Value | Interpretation |
 |:-------|:-----:|:---------------|
@@ -263,7 +263,7 @@ random_state    :  42
 
 > **What does R² = 0.35 mean?** The model captures the dominant directional trends (discounts → loss, higher sales → gain) but 65% of profit variance comes from factors not in the model — such as product cost structure, customer negotiation, regional pricing, and seasonality. This is expected with only 3 features, and the coefficient insights remain highly valuable for business decision-making even though the predictive accuracy is moderate.
 
-#### 🔄 Forecast Pipeline
+####  Forecast Pipeline
 
 ```
 Full dataset (2,120 rows)
@@ -289,18 +289,18 @@ Import into Power BI → Actual vs. Predicted profit overlay
 
 ---
 
-## 💡 Key Business Insights
+##  Key Business Insights
 
 > *Findings prioritized by business impact — what a retail executive would act on first.*
 
-### 🚨 Critical — Immediate Action Required
+###  Critical — Immediate Action Required
 
 | # | Insight | Supporting Evidence | Recommended Action |
 |:-:|:--------|:-------------------|:-------------------|
 | 1 | **Discounts above 20% nearly always produce negative profit** | β₂ = −346.23; at 20% discount, the loss (−$69.25) exceeds the baseline profit (+$60.22) | Cap discounts at 15–20%; require margin approval for anything above |
 | 2 | **Tables & Bookcases are consistently sold at a loss** | Sub-category profit analysis shows persistent negative profit totals | Renegotiate supplier terms or phase out lowest-margin SKUs |
 
-### 📊 Strategic — Planning & Optimization
+###  Strategic — Planning & Optimization
 
 | # | Insight | Supporting Evidence | Recommendation |
 |:-:|:--------|:-------------------|:---------------|
@@ -311,7 +311,7 @@ Import into Power BI → Actual vs. Predicted profit overlay
 
 ---
 
-## ⚠️ Limitations & Future Work
+##  Limitations & Future Work
 
 ### Honest Assessment of Current Scope
 
@@ -324,27 +324,27 @@ Import into Power BI → Actual vs. Predicted profit overlay
 
 ### Planned Next Steps
 
-- 🌲 Benchmark against **tree-based models** (Random Forest, XGBoost) to improve R²
-- 📅 Add **time-series features** (month, quarter, YoY growth) to capture seasonality
-- 👥 Build a **customer segmentation model** (RFM analysis) to identify high-value vs. at-risk customers
-- 🔁 Implement **cross-validation** (5-fold) for more robust performance estimates
-- ☁️ Deploy the Power BI dashboard to **Power BI Service** for live stakeholder access
+-  Benchmark against **tree-based models** (Random Forest, XGBoost) to improve R²
+-  Add **time-series features** (month, quarter, YoY growth) to capture seasonality
+-  Build a **customer segmentation model** (RFM analysis) to identify high-value vs. at-risk customers
+-  Implement **cross-validation** (5-fold) for more robust performance estimates
+-  Deploy the Power BI dashboard to **Power BI Service** for live stakeholder access
 
 ---
 
-## 🚀 How to Reproduce
+##  How to Reproduce
 
-### 1️⃣ SQL
+### 1️ SQL
 Import the four source CSV files into **Google BigQuery** and execute the queries in `sql/queries.sql`.
 
-### 2️⃣ Python
+### 2️ Python
 ```bash
 pip install pandas matplotlib seaborn scikit-learn numpy
 ```
 Open `final_forecast_csv.ipynb` in **Jupyter Notebook** or **Google Colab**.
 Make sure `final_project_query.csv` is in your working directory.
 
-### 3️⃣ Power BI
+### 3️ Power BI
 Open `Final_Project.pbix` in **Power BI Desktop** (free download from Microsoft).
 Reconnect data sources if prompted.
 
@@ -352,7 +352,7 @@ Reconnect data sources if prompted.
 ## 👤 Author
 **Amir Rashidov**
 
-🎓 Data Analytics Student
+ Data Analytics Student
 📧 *amirrashidov14@gmail.com*
 💼 www.linkedin.com/in/amir-r-673789203
 ---
